@@ -175,7 +175,7 @@ void dda_create(DDA *dda, TARGET *target) {
   // We end at the passed target.
   memcpy(&(dda->endpoint), target, sizeof(TARGET));
 
-	if (DEBUG_DDA && (debug_flags & DEBUG_DDA))
+	//if (DEBUG_DDA && (debug_flags & DEBUG_DDA))
     sersendf_P(PSTR("\nCreate: X %lq  Y %lq  Z %lq  F %lu\n"),
                dda->endpoint.axis[X], dda->endpoint.axis[Y],
                dda->endpoint.axis[Z], dda->endpoint.F);
@@ -486,7 +486,7 @@ void dda_create(DDA *dda, TARGET *target) {
 void dda_start(DDA *dda) {
 	// called from interrupt context: keep it simple!
 
-  if (DEBUG_DDA && (debug_flags & DEBUG_DDA))
+//  if (DEBUG_DDA && (debug_flags & DEBUG_DDA))
     sersendf_P(PSTR("Start: X %lq  Y %lq  Z %lq  F %lu\n"),
                dda->endpoint.axis[X], dda->endpoint.axis[Y],
                dda->endpoint.axis[Z], dda->endpoint.F);
@@ -788,14 +788,21 @@ void dda_clock() {
     #if defined X_MIN_PIN || defined X_MAX_PIN
     if (dda->endstop_check & 0x1) {
       #if defined X_MIN_PIN
-      if (x_min() == dda->endstop_stop_cond)
+      if (x_min() == dda->endstop_stop_cond) {
         move_state.debounce_count_xmin++;
+        serial_writechar('-');
+      }
       else
         move_state.debounce_count_xmin = 0;
       #endif
+      // Can't work this way. When backing off of X_MIN, X_MAX is also checked,
+      // which of course is already open, so it signals endstop release
+      // even while X_MIN is still closed.
       #if defined X_MAX_PIN
-      if (x_max() == dda->endstop_stop_cond)
+      if (x_max() == dda->endstop_stop_cond) {
         move_state.debounce_count_xmax++;
+        serial_writechar('+');
+      }
       else
         move_state.debounce_count_xmax = 0;
       #endif
